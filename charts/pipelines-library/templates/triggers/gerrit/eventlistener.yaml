@@ -1,0 +1,167 @@
+{{ if eq .Values.global.gitProvider "gerrit" }}
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: gerrit-listener
+  labels:
+    {{- include "edp-tekton.labels" . | nindent 4 }}
+spec:
+  triggers:
+    - name: gerrit-listener-autotests-build
+      interceptors:
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.change.status in ['MERGED']"
+        - ref:
+            name: "edp"
+            kind: NamespacedInterceptor
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "extensions.spec.type in ['autotests']"
+            - name: "overlays"
+              value:
+                - key: cbtype_short
+                  expression: "extensions.spec.type.truncate(3)"
+      bindings:
+        - ref: gerrit-binding-build
+      template:
+        ref: gerrit-build-autotests-template
+
+    - name: gerrit-listener-app-build
+      interceptors:
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.change.status in ['MERGED']"
+        - ref:
+            name: "edp"
+            kind: NamespacedInterceptor
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "extensions.spec.type in ['application']"
+            - name: "overlays"
+              value:
+              - key: cbtype_short
+                expression: "extensions.spec.type.truncate(3)"
+      bindings:
+        - ref: gerrit-binding-build
+      template:
+        ref: gerrit-build-app-template
+
+    - name: gerrit-listener-lib-build
+      interceptors:
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.change.status in ['MERGED']"
+        - ref:
+            name: "edp"
+            kind: NamespacedInterceptor
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "extensions.spec.type in ['library'] && extensions.spec.framework != 'docker'"
+            - name: "overlays"
+              value:
+              - key: cbtype_short
+                expression: "extensions.spec.type.truncate(3)"
+      bindings:
+        - ref: gerrit-binding-build
+      template:
+        ref: gerrit-build-lib-template
+
+    - name: gerrit-listener-container-build
+      interceptors:
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.change.status in ['MERGED']"
+        - ref:
+            name: "edp"
+            kind: NamespacedInterceptor
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "extensions.spec.type in ['library'] && extensions.spec.framework == 'docker'"
+            - name: "overlays"
+              value:
+              - key: cbtype_short
+                expression: "extensions.spec.type.truncate(3)"
+      bindings:
+        - ref: gerrit-binding-build
+      template:
+        ref: gerrit-build-container-template
+
+    - name: gerrit-listener-app-container-code-review
+      interceptors:
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.change.status in ['NEW']"
+        - ref:
+            name: "edp"
+            kind: NamespacedInterceptor
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "extensions.spec.type in ['application'] || (extensions.spec.type in ['library'] && extensions.spec.framework == 'docker')"
+            - name: "overlays"
+              value:
+                - key: cbtype_short
+                  expression: "extensions.spec.type.truncate(3)"
+      bindings:
+        - ref: gerrit-binding-review
+      template:
+        ref: gerrit-code-review-app-container-template
+
+    - name: gerrit-listener-lib-autotests-code-review
+      interceptors:
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.change.status in ['NEW']"
+        - ref:
+            name: "edp"
+            kind: NamespacedInterceptor
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "extensions.spec.type in ['autotests'] || (extensions.spec.type in ['library'] && extensions.spec.framework != 'docker')"
+            - name: "overlays"
+              value:
+              - key: cbtype_short
+                expression: "extensions.spec.type.truncate(3)"
+      bindings:
+        - ref: gerrit-binding-review
+      template:
+        ref: gerrit-code-review-lib-autotests-template
+  resources:
+    kubernetesResource:
+      spec:
+        template:
+          spec:
+            serviceAccountName: tekton-triggers-sa-{{ .Release.Namespace }}
+            containers:
+              - resources:
+                  requests:
+                    memory: "64Mi"
+                    cpu: "50m"
+                  limits:
+                    memory: "128Mi"
+                    cpu: "500m"
+{{ end }}

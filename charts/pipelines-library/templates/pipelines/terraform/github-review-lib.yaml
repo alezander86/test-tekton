@@ -1,0 +1,82 @@
+{{ if eq .Values.global.gitProvider "github" }}
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: github-terraform-terraform-lib-review
+  labels:
+    {{- include "edp-tekton.labels" . | nindent 4 }}
+spec:
+  workspaces:
+    - name: shared-workspace
+    - name: ssh-creds
+  params:
+    - name: pipelineUrl
+      default: https://tekton-{{ .Release.Namespace }}.{{ .Values.global.dnsWildCard }}/#/namespaces/$(context.pipelineRun.namespace)/pipelineruns/$(context.pipelineRun.name)
+      type: string
+    - name: git-source-url
+      default: "https://github.com/epmd-edp/terraform-terraform-terraform"
+      description: git url to clone
+      type: string
+    - name: git-source-revision
+      description: 'git revision to checkout (branch, tag, sha, ref…)'
+      default: "edp"
+      type: string
+    - name: git-refspec
+      description: Refspec to fetch before checking out revision.
+      default: ""
+      type: string
+    - name: CODEBASE_NAME
+      default: 'terraform-terraform'
+      description: "Project name"
+      type: string
+    - name: gitfullrepositoryname
+      description: "repository full name"
+      type: string
+    - name: gitsha
+      description: "commit sha"
+      type: string
+  tasks:
+
+{{- include "github-review-start" . | nindent 4 }}
+
+    - name: terraform-format
+      taskRef:
+        kind: Task
+        name: terraform
+      runAfter:
+        - init-values
+      params:
+        - name: EXTRA_COMMANDS
+          value: |
+            if [ -f .terraform-version ]; then
+                echo "[TEKTON][INFO] The '.terraform-version' file exists"
+                export TFENV_TERRAFORM_VERSION=""
+            else
+                echo "[TEKTON][INFO] The '.terraform-version' file does not exist. Terraform version - ${TFENV_TERRAFORM_VERSION} will be used by default"
+            fi
+            terraform init -backend=false
+            terraform fmt -check -list=true -diff
+            terraform validate
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    - name: terraform-lint
+      taskRef:
+        kind: Task
+        name: terraform
+      runAfter:
+        - terraform-format
+      params:
+        - name: BASE_IMAGE
+          value: 'ghcr.io/terraform-linters/tflint:v0.41.0'
+        - name: EXTRA_COMMANDS
+          value: |
+            tflint --color
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+{{ include "github-review-vote" . | nindent 2 }}
+
+{{ end }}

@@ -1,0 +1,21 @@
+{{- if ne .Values.global.gitProvider "gerrit" -}}
+{{- $elName := printf "el-%s-listener" .Values.global.gitProvider -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $elName }}
+  labels:
+    {{- include "edp-tekton.labels" . | nindent 4 }}
+spec:
+  rules:
+    - host: {{ $elName }}-{{ .Release.Namespace }}.{{ .Values.global.dnsWildCard }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $elName }}
+                port:
+                  number: 8080
+{{- end }}

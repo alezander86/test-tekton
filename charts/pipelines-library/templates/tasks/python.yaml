@@ -1,0 +1,104 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: python
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.17.0"
+    tekton.dev/categories: Build Tools
+    tekton.dev/tags: build-tool
+    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le"
+spec:
+  description: >-
+    This task can be used to run python goals on a project.
+    It utilizes default PIP and Twine environment variables.
+    Twine logs in to nexus using environment variables to upload packages.
+    PIP does not support username and password environment variables yet.
+    Thus, we use the ~/.netrc file for PIP to download packages.
+    The ~/.config/pip/pip.conf file can also be used along with ~/.netrc.
+  workspaces:
+    - name: source
+  params:
+    - name: PATH_CONTEXT
+      type: string
+      default: "."
+      description: The path where package.json of the project is defined.
+    - name: PIP_TRUSTED_HOST
+      type: string
+      default: "nexus"
+      description: Nexus Repository host PIP connects to via HTTP.
+    - name: PIP_INDEX
+      type: string
+      default: "http://nexus:8081/repository/edp-python-group/pypi"
+      description: >-
+        Private repo index PIP searches through. It is used by 'pip search' command.
+    - name: PIP_INDEX_URL
+      type: string
+      default: "http://nexus:8081/repository/edp-python-group/simple"
+      description: >-
+        Repo index from wich PIP downloads private packages and public packages via proxy.
+        PIP_INDEX_URL can have only one URL while PIP_EXTRA_INDEX_URL can hold 
+        multiple URLs if passed with spaces. It is used by 'pip install' command.
+        To access index via web, add slash at the end of 'simple/'.
+    - name: TWINE_REPOSITORY_URL
+      type: string
+      default: ""
+      description: Nexus Repository URL Twine uploads to.
+    - name: TWINE_NON_INTERACTIVE
+      type: string
+      default: "1"
+      description: Do not interactively prompt for credentials if they are missing.
+    - name: EXTRA_COMMANDS
+      type: string
+    - name: BASE_IMAGE
+      type: string
+      default: "python:3.8-alpine3.16"
+      description: The python image you want to use.
+    - name: ci-secret
+      type: string
+      description: name of the secret holding the CI npm secret
+      default: nexus-ci.user
+  steps:
+    - name: python
+      image: $(params.BASE_IMAGE)
+      workingDir: $(workspaces.source.path)/$(params.PATH_CONTEXT)
+      env:
+        - name: HOME
+          value: $(workspaces.source.path)
+        - name: PIP_TRUSTED_HOST
+          value: $(params.PIP_TRUSTED_HOST)
+        - name: PIP_INDEX
+          value: $(params.PIP_INDEX)
+        - name: PIP_INDEX_URL
+          value: $(params.PIP_INDEX_URL)
+        - name: TWINE_REPOSITORY_URL
+          value: $(params.TWINE_REPOSITORY_URL)
+        - name: TWINE_NON_INTERACTIVE
+          value: $(params.TWINE_NON_INTERACTIVE)
+        - name: TWINE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: $(params.ci-secret)
+              key: username
+        - name: TWINE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: $(params.ci-secret)
+              key: password
+      script: |
+        #!/usr/bin/env sh
+        set -ex
+        export PATH=$PATH:$HOME/.local/bin
+
+        netcr_file="$HOME/.netrc"
+        if [ ! -f "${netcr_file}" ]; then
+          cat <<-EOF > "${netcr_file}"
+        machine ${PIP_TRUSTED_HOST}
+        login ${TWINE_USERNAME}
+        password ${TWINE_PASSWORD}
+        EOF
+        chmod 0600 "${netcr_file}"
+        fi
+
+        $(params.EXTRA_COMMANDS)
