@@ -68,7 +68,7 @@ metadata:
   name: example-run
 spec:
   taskRef:
-        kind: Task
+    kind: Task
     name: kaniko
   workspaces:
   - name: source

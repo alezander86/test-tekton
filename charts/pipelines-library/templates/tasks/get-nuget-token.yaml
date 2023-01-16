@@ -25,8 +25,8 @@ spec:
       description: name of the secret holding the CI Nexus secret
       default: nexus-ci.user
   results:
-    - name: NUGET_TOKEN_FILE
-      description: ''
+    - description: ''
+      name: NUGET_TOKEN_FILE
   steps:
     - name: get-nuget-token
       image: python:3.10.1-alpine3.15
