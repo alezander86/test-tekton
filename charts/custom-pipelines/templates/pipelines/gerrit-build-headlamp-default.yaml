@@ -193,7 +193,6 @@ spec:
     # - name: push-to-jira
     #   taskRef:
     #     kind: Task
-    #     kind: Task
     #     name: push-to-jira
 
     # - name: ecr-to-docker

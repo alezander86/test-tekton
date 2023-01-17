@@ -240,7 +240,7 @@ spec:
         name: git-cli
       runAfter:
         - helm-push-gh-pages
-      params:Task
+      params:
         - name: GIT_USER_EMAIL
           value: edp-ci@edp.ci-user
         - name: GIT_USER_NAME

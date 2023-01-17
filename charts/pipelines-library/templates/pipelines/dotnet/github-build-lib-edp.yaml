@@ -60,7 +60,7 @@ spec:
 {{- include "github-build-start" . | nindent 4 }}
 
     - name: get-version
-      taskRef:x
+      taskRef:
         kind: Task
         name: get-version-edp
       runAfter:

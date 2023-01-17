@@ -3,8 +3,8 @@ description: A Helm chart for EDP Tekton Pipelines
 home: https://epam.github.io/edp-install/
 name: edp-tekton
 type: application
-version: 0.2.9
-appVersion: 0.2.9
+version: 0.3.1
+appVersion: 0.3.1
 icon: https://epam.github.io/edp-install/assets/logo.png
 keywords:
   - edp
@@ -40,12 +40,12 @@ annotations:
 dependencies:
   - name: edp-tekton-common-library
     version: 0.2.4
-    repository: https://epam.github.io/edp-helm-charts/stable
+    repository: "file://../common-library"
   - name: edp-tekton-interceptor
     version: 0.2.4
-    repository: https://epam.github.io/edp-helm-charts/stable
+    repository: "file://../interceptor"
     condition: edp-tekton-interceptor.enabled
   - name: edp-tekton-dashboard
     version: 0.31.1
-    repository: https://epam.github.io/edp-helm-charts/stable
+    repository: "file://../tekton-dashboard"
     condition: edp-tekton-dashboard.enabled

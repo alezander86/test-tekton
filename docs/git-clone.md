@@ -115,7 +115,7 @@ hold your credentials and bind to this workspace.
       tasks:
       - name: fetch-source
         taskRef:
-        kind: Task
+          kind: Task
           name: git-clone
         workspaces:
         - name: ssh-directory
