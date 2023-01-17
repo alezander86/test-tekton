@@ -1,6 +1,7 @@
 {{- define "golang-build-common" -}}
 - name: sast
   taskRef:
+    kind: Task
     name: sast
   runAfter:
     - get-version

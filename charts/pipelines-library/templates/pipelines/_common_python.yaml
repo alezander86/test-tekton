@@ -1,6 +1,7 @@
 {{- define "python-build-common" -}}
 - name: test
   taskRef:
+    kind: Task
     name: python
   runAfter:
     - compile
