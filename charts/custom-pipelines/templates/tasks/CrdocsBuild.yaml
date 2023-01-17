@@ -46,9 +46,10 @@ spec:
       type: string
       description: Extra commands
       default: ""
+      type: string
     - name: BASE_IMAGE
       description: "Base image"
-      default: "docker.io/library/golang:1.18.4-bullseye"
+      default: "docker.io/library/golang:1.18.4-bullseye"+9
       type: string
     - name: GOPROXY
       description: "Go proxy server"

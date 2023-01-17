@@ -23,12 +23,12 @@
     - fetch-repository
   params:
     - name: GERRIT_PORT
-      value: '{{ .Values.global.gerritSSHPort }}'
+      value: {{ .Values.global.gerritSSHPort }}
     - name: SSH_GERRIT_COMMAND
       value: review --message 'Build Started $(params.pipelineUrl)' $(tasks.fetch-repository.results.commit)
     # we can trigger build pipeline without GerritPatchSet, so let's skip exit code if Patch doesn't exists
     - name: ERR_EXIT_CODE
-      value: '0'
+      value: 0
   workspaces:
     - name: ssh-directory
       workspace: ssh-creds
@@ -71,7 +71,7 @@
     name: gerrit-ssh-cmd
   params:
     - name: GERRIT_PORT
-      value: '{{ .Values.global.gerritSSHPort }}'
+      value: {{ .Values.global.gerritSSHPort }}
     - name: SSH_GERRIT_COMMAND
       value: review --verified 0 --message 'Build Started $(params.pipelineUrl)' $(tasks.fetch-repository.results.commit)
   workspaces:
@@ -198,7 +198,7 @@ finally:
       name: gerrit-ssh-cmd
     params:
       - name: GERRIT_PORT
-        value: '{{ .Values.global.gerritSSHPort }}'
+        value: {{ .Values.global.gerritSSHPort }}
       - name: SSH_GERRIT_COMMAND
         value: "review --verified +1 --message 'Build Successfull $(params.pipelineUrl)' $(tasks.fetch-repository.results.commit)"
     workspaces:
@@ -215,7 +215,7 @@ finally:
       name: gerrit-ssh-cmd
     params:
       - name: GERRIT_PORT
-        value: '{{ .Values.global.gerritSSHPort }}'
+        value: {{ .Values.global.gerritSSHPort }}
       - name: SSH_GERRIT_COMMAND
         value: "review --verified -1 --message 'Build Failed $(params.pipelineUrl)' $(tasks.fetch-repository.results.commit)"
     workspaces:
